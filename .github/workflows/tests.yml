@@ -30,3 +30,6 @@ jobs:
       - name: Test cross-device synchronization
         run: |
           CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright-core').chromium.executablePath())")" node tests/e2e/sync-two-devices.js
+      - name: Test Nova Nexus mobile add and settings
+        run: |
+          CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright-core').chromium.executablePath())")" node tests/e2e/nova-ui.js
