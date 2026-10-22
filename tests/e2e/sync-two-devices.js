@@ -19,7 +19,7 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   const mkPage = async (vp) => {
     const ctx = await br.newContext({viewport: vp, deviceScaleFactor: 1}); const page = await ctx.newPage();
     page.on('pageerror', e => errs.push('pageerror: ' + e.message));
-    await page.exposeFunction('__fsGet', p => store.has(p) ? store.get(p) : null); await page.exposeFunction('__fsSet', (p, d) => { store.set(p, d); });
+    await page.exposeFunction('__fsGet', p => store.has(p) ? store.get(p) : null); await page.exposeFunction('__fsSet', async (p, d) => { await new Promise(r => setTimeout(r, 900)); store.set(p, d); });
     await page.route('**/*', route => { const u = route.request().url();
       if (u.includes('gstatic.com/firebasejs')) return route.fulfill({body: u.includes('firebase-app-compat') ? FAKE : '', contentType: 'text/javascript'});
       if (u.includes('api.binance.com') && u.includes('/klines')) return route.fulfill({json: kl, headers: {'access-control-allow-origin': '*'}});
@@ -66,7 +66,7 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   await B.waitForTimeout(700); // antes de que venza el debounce local de 1,2 s
   const localRace = await B.evaluate(() => { const key = Object.keys(localStorage).find(k => /mobile_v1_U1$/.test(k)); const s = JSON.parse(localStorage.getItem(key)); return {symbol: s.symbol, bollinger: s.indicators.bollinger}; });
   console.log('Colisión sync local:', JSON.stringify(localRace));
-  if (localRace.symbol !== 'BTCUSDT' || localRace.bollinger !== true) process.exitCode = 1;
+  if (localRace.symbol !== 'BTCUSDT' || localRace.bollinger !== true) process.exitCode = 1; await B.waitForTimeout(550); await B.evaluate(() => document.querySelector('#sheetList [data-ind="supertrend"]')?.click()); await B.waitForTimeout(2500); const persisted = JSON.parse(store.get('users/U1/data/cct_mobile').state); console.log('Edición durante guardado:', JSON.stringify({bollinger: persisted.indicators.bollinger, supertrend: persisted.indicators.supertrend})); if (persisted.indicators.bollinger !== true || persisted.indicators.supertrend !== true) process.exitCode = 1;
   console.log('errores:', errs.join(' | ') || 'ninguno');
   await br.close(); srv.close();
 })();
