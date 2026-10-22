@@ -56,6 +56,17 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   console.log('Móvil lista (en vivo):', await B.evaluate(() => [...document.querySelectorAll('#sheetList .pine-row b')].map(x => x.textContent).join(', ') || '(ninguno)'));
   await B.reload(); await B.waitForTimeout(2500); await B.click('[data-view=chartView]'); await B.waitForTimeout(500); await B.click('#indicatorCount'); await B.waitForTimeout(300); await B.click('#sheetList [data-indtab=mine]'); await B.waitForTimeout(400);
   console.log('Móvil tras recargar:', await B.evaluate(() => [...document.querySelectorAll('#sheetList .pine-row b')].map(x => x.textContent).join(', ') || '(ninguno)'));
+  // Colisión: un cambio local sin subir debe sobrevivir al snapshot de otro dispositivo.
+  await B.click('[data-panel=indicators]'); await B.waitForTimeout(300);
+  await B.evaluate(() => document.querySelector('[data-ind="bollinger"]')?.click());
+  const remote = JSON.parse(store.get('users/U1/data/cct_mobile').state);
+  remote.symbol = 'SOLUSDT';
+  store.set('users/U1/data/cct_mobile', {state: JSON.stringify(remote), updatedAt: 'remote'});
+  await B.waitForTimeout(2200);
+  const localRace = await B.evaluate(() => { const key = Object.keys(localStorage).find(k => /mobile_v1_U1$/.test(k)); const s = JSON.parse(localStorage.getItem(key)); return {symbol: s.symbol, bollinger: s.indicators.bollinger}; });
+  const cloudRace = JSON.parse(store.get('users/U1/data/cct_mobile').state);
+  console.log('Colisión sync:', JSON.stringify(localRace), '· nube:', cloudRace.symbol, cloudRace.indicators.bollinger);
+  if (localRace.symbol !== 'BTCUSDT' || localRace.bollinger !== true || cloudRace.symbol !== 'BTCUSDT' || cloudRace.indicators.bollinger !== true) process.exitCode = 1;
   console.log('errores:', errs.join(' | ') || 'ninguno');
   await br.close(); srv.close();
 })();
