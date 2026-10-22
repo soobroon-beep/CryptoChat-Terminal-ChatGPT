@@ -51,7 +51,7 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
     await page.click('[data-view="chartView"]');
     await page.waitForFunction(() => document.querySelector('#priceCanvas')?.width > 0, null, {timeout: 15000});
     await page.click('[data-panel="indicators"]');
-    await page.click('[data-indtab="mine"]');
+    await page.locator('[data-indtab="mine"]:visible').click();
     await page.locator('[data-cat-add="nova-nexus"]').click();
     await page.waitForFunction(() => {
       const card = [...document.querySelectorAll('.nova-card')].find(x => x.querySelector('b')?.textContent.trim() === 'Nova Nexus');
@@ -63,7 +63,7 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
     await page.click('#closeSheet');
     await page.waitForFunction(() => !!document.querySelector('#legendBox button[data-id="cat:nova-nexus"][data-do="set"]'), null, {timeout: 15000});
     await page.click('#indicatorCount');
-    await page.click('[data-indtab="mine"]');
+    await page.locator('[data-indtab="mine"]:visible').click();
     await page.locator('.nova-card [data-pine-set="cat:nova-nexus"]').click();
     const dialog = page.locator('[role="dialog"][aria-label="Configuración"]');
     await dialog.waitFor({state: 'visible', timeout: 10000});
