@@ -58,8 +58,9 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   await B.reload(); await B.waitForTimeout(2500); await B.click('[data-view=chartView]'); await B.waitForTimeout(500); await B.click('#indicatorCount'); await B.waitForTimeout(300); await B.click('#sheetList [data-indtab=mine]'); await B.waitForTimeout(400);
   console.log('Móvil tras recargar:', await B.evaluate(() => [...document.querySelectorAll('#sheetList .pine-row b')].map(x => x.textContent).join(', ') || '(ninguno)'));
   // Colisión: un cambio local sin subir debe sobrevivir al snapshot de otro dispositivo.
-  await B.click('[data-panel=indicators]'); await B.waitForTimeout(300);
-  await B.evaluate(() => document.querySelector('[data-ind="bollinger"]')?.click());
+  await A.close(); // aislar la colisión para que un tercer push no altere el resultado
+  await B.evaluate(() => document.querySelector('#sheetList [data-indtab=std]')?.click()); await B.waitForTimeout(200);
+  await B.evaluate(() => document.querySelector('#sheetList [data-ind="bollinger"]')?.click());
   const remote = JSON.parse(store.get('users/U1/data/cct_mobile').state);
   remote.symbol = 'SOLUSDT';
   store.set('users/U1/data/cct_mobile', {state: JSON.stringify(remote), updatedAt: 'remote'});
