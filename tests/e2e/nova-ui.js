@@ -52,7 +52,7 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
     await page.waitForFunction(() => document.querySelector('#priceCanvas')?.width > 0, null, {timeout: 15000});
     await page.click('[data-panel="indicators"]');
     await page.locator('[data-indtab="mine"]:visible').click();
-    await page.locator('[data-cat-add="nova-nexus"]').click();
+    await page.locator('[data-cat-add="nova-nexus"]:visible').first().click();
     await page.waitForFunction(() => {
       const card = [...document.querySelectorAll('.nova-card')].find(x => x.querySelector('b')?.textContent.trim() === 'Nova Nexus');
       return card && card.querySelector('[data-pine-set="cat:nova-nexus"]') && !/Calculando/.test(card.innerText);
