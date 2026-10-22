@@ -23,3 +23,10 @@ jobs:
         run: find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -r -n1 node --check
       - name: Run indicator and Pine regression tests
         run: node --test tests/indicators.test.js tests/pine.test.js tests/corpus.test.js
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright-core
+          npx playwright install --with-deps chromium
+      - name: Test cross-device synchronization
+        run: |
+          CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright-core').chromium.executablePath())")" node tests/e2e/sync-two-devices.js
