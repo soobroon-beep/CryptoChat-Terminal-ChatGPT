@@ -1,4 +1,4 @@
-# CryptoChart Terminal — versión móvil
+# CryptoChart Terminal
 
 ## Inicio
 Abre `index.html` desde un servidor estático HTTPS (por ejemplo, GitHub Pages). No hay compilación ni dependencias: solo `index.html`, `style.css` y `app.js`.
@@ -14,8 +14,14 @@ En computadora (ventana de 1024 px o más) se muestran tres columnas a la vez: s
 ## Dibujos
 Línea de tendencia, rayo, horizontal, vertical, rectángulo, canal paralelo, flecha, texto, medición, retroceso y extensión de Fibonacci, marcador de máximo/mínimo y posiciones Long/Short. Arrastra o toca dos puntos (tres en canal y extensión de Fibonacci); toca un dibujo para seleccionarlo, mueve sus puntos o bórralo; deshacer. Se guardan por activo en este dispositivo y siguen en su sitio al cambiar de temporalidad.
 
-## Limitaciones
-Los parámetros de los indicadores (periodos, colores) son fijos por ahora; solo se activan o desactivan. El VWAP reinicia cada día UTC y por eso no se muestra en 1d, 1w ni 1M. Long/Short usan stop espejo a 2:1 (no editable todavía). Todavía no incluye el intérprete Pine ni las alertas. Las APIs de Binance pueden estar restringidas por región; si fallan se muestra un aviso, nunca datos simulados. No ejecuta órdenes.
+## Limitaciones conocidas
+- El VWAP reinicia cada día UTC y no se muestra en 1d, 1w ni 1M.
+- Long/Short usa stop espejo 2:1, sin parámetro editable.
+- El intérprete de Pine es propio y de compatibilidad parcial; no equivale a TradingView. Las funciones no soportadas se avisan en el resultado.
+- Las alertas se evalúan mientras la aplicación está abierta. Las alertas de indicador se comprueban al cierre de la vela; alertcondition/alert no ejecutan órdenes.
+- La sincronización conserva cambios locales pendientes frente a un snapshot remoto. Dos ediciones simultáneas del mismo campo todavía no se fusionan de forma transaccional; revisa ambos dispositivos antes de reintentar tras una colisión.
+- Las APIs de Binance pueden estar restringidas por región; si fallan se muestra un aviso y no se inventan datos.
+- La aplicación es solo de análisis: no ejecuta órdenes ni se conecta a cuentas de trading.
 
 ## Inicio de sesión con Google (guardado por persona)
 La versión móvil puede guardar el seguimiento, los indicadores, la temporalidad, el tema y los dibujos en la cuenta de Google de cada persona (Firebase Auth + Firestore), y sincronizarlos en tiempo real entre dispositivos. Cada persona solo ve sus propios datos. Al cerrar sesión, los datos de la cuenta dejan de verse en ese dispositivo.

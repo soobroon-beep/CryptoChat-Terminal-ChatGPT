@@ -240,12 +240,14 @@ test('strategy: sintaxis antigua con when= y dirección booleana, y position_siz
   assert.deepEqual(r.plots[0].values.map(v => v || 0), [0, 0, 0, 1, 1]);
 });
 
-test('catálogo Nova: Oscillator y Screener se interpretan sin avisos de no soportado', () => {
+test('catálogo Nova: los tres scripts se interpretan y Nexus genera series configurables', () => {
   const fs = require('fs'), cs = walkC(400);
-  for (const f of ['nova-oscillator.pine', 'nova-screener.pine']) {
+  for (const f of ['nova-nexus.pine', 'nova-oscillator.pine', 'nova-screener.pine']) {
     const r = P.run(fs.readFileSync(__dirname + '/../catalog/' + f, 'utf8'), cs, {interval: '1h', symbol: 'BTCUSDT', timeLimitMs: 20000});
     assert.ok(r.ok, f + ' ' + JSON.stringify(r.error));
     assert.equal(r.warnings.filter(w => w.level === 'unsupported').length, 0, f);
+    assert.ok(r.inputs.length > 0, f + ' debe exponer entradas configurables');
+    if (f === 'nova-nexus.pine') assert.ok(r.plots.length > 0, 'Nova Nexus debe producir series para el gráfico');
   }
 });
 test('request.security recortado da el mismo resultado que el script completo', () => {

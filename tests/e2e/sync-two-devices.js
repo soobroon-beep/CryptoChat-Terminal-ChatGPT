@@ -9,7 +9,7 @@ for (let i = 0; i < N; i++) { const o = p, drift = Math.sin(i / 70) * 55 + (rnd(
 const ticker = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT'].map((s, i) => ({symbol: s, lastPrice: String(p / (i + 1)), priceChangePercent: String((i - 2) * .8)}));
 (async () => {
   await new Promise(r => srv.listen(0, r)); const port = srv.address().port;
-  const br = await chromium.launch({executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+  const br = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
   const mode = process.argv[2] || 'mobile', inds = (process.argv[3] || '').split(',').filter(Boolean), name = process.argv[4] || 'shot';
 
   const store = new Map();
@@ -19,7 +19,7 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   const mkPage = async (vp) => {
     const ctx = await br.newContext({viewport: vp, deviceScaleFactor: 1}); const page = await ctx.newPage();
     page.on('pageerror', e => errs.push('pageerror: ' + e.message));
-    await page.exposeFunction('__fsGet', p => store.has(p) ? store.get(p) : null); await page.exposeFunction('__fsSet', (p, d) => { store.set(p, d); });
+    await page.exposeFunction('__fsGet', p => store.has(p) ? store.get(p) : null); await page.exposeFunction('__fsSet', async (p, d) => { await new Promise(r => setTimeout(r, 900)); store.set(p, d); });
     await page.route('**/*', route => { const u = route.request().url();
       if (u.includes('gstatic.com/firebasejs')) return route.fulfill({body: u.includes('firebase-app-compat') ? FAKE : '', contentType: 'text/javascript'});
       if (u.includes('api.binance.com') && u.includes('/klines')) return route.fulfill({json: kl, headers: {'access-control-allow-origin': '*'}});
@@ -49,13 +49,24 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   console.log('LS móvil:', await B.evaluate(() => Object.keys(localStorage).map(k => k + '=' + localStorage.getItem(k).match(/"pine":\[[^\]]*\]/)?.[0] || '').filter(x => /mobile/.test(x)).join('\n')));
   await B.screenshot({path: out + 'sync_mobile.png'});
   // 3) Cambio en vivo: el PC añade otro indicador y el móvil lo recibe sin recargar
-  await A.evaluate(() => { document.querySelector('.side-tabs [data-side=indicatorView]').click(); const t = document.querySelector('#indicatorList [data-indtab=mine]'); t && t.click(); });
+  await A.click('[data-panel=indicators]'); await A.waitForTimeout(300);
+  await A.evaluate(() => document.querySelector('#sheetList [data-indtab=mine]')?.click());
   await A.evaluate(() => document.querySelector('[data-pine-new]').click()); await A.waitForTimeout(200);
   await A.fill('#pineName', 'Segundo PC'); await A.fill('#pineCode', '//@version=5\nindicator("Segundo PC")\nplot(ta.rsi(close, 14), "RSI")\n'); await A.click('#pineRun'); await A.waitForTimeout(2500);
   await B.waitForTimeout(2500);
   console.log('Móvil lista (en vivo):', await B.evaluate(() => [...document.querySelectorAll('#sheetList .pine-row b')].map(x => x.textContent).join(', ') || '(ninguno)'));
   await B.reload(); await B.waitForTimeout(2500); await B.click('[data-view=chartView]'); await B.waitForTimeout(500); await B.click('#indicatorCount'); await B.waitForTimeout(300); await B.click('#sheetList [data-indtab=mine]'); await B.waitForTimeout(400);
   console.log('Móvil tras recargar:', await B.evaluate(() => [...document.querySelectorAll('#sheetList .pine-row b')].map(x => x.textContent).join(', ') || '(ninguno)'));
+  // Colisión: un cambio local sin subir debe sobrevivir al snapshot de otro dispositivo.
+  await B.evaluate(() => document.querySelector('#sheetList [data-indtab=std]')?.click()); await B.waitForTimeout(200);
+  await B.evaluate(() => document.querySelector('#sheetList [data-ind="bollinger"]')?.click());
+  const remote = JSON.parse(store.get('users/U1/data/cct_mobile').state);
+  remote.symbol = 'SOLUSDT';
+  store.set('users/U1/data/cct_mobile', {state: JSON.stringify(remote), updatedAt: 'remote'});
+  await B.waitForTimeout(700); // antes de que venza el debounce local de 1,2 s
+  const localRace = await B.evaluate(() => { const key = Object.keys(localStorage).find(k => /mobile_v1_U1$/.test(k)); const s = JSON.parse(localStorage.getItem(key)); return {symbol: s.symbol, bollinger: s.indicators.bollinger}; });
+  console.log('Colisión sync local:', JSON.stringify(localRace));
+  if (localRace.symbol !== 'BTCUSDT' || localRace.bollinger !== true) process.exitCode = 1; await B.waitForTimeout(550); await B.evaluate(() => document.querySelector('#sheetList [data-ind="supertrend"]')?.click()); await B.waitForTimeout(2500); const persisted = JSON.parse(store.get('users/U1/data/cct_mobile').state); console.log('Edición durante guardado:', JSON.stringify({bollinger: persisted.indicators.bollinger, supertrend: persisted.indicators.supertrend})); if (persisted.indicators.bollinger !== true || persisted.indicators.supertrend !== true) process.exitCode = 1;
   console.log('errores:', errs.join(' | ') || 'ninguno');
   await br.close(); srv.close();
 })();

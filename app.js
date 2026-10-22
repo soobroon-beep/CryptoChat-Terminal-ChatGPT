@@ -2283,7 +2283,20 @@ async function onUser(user) {
     unsubCloud = ref.onSnapshot(sn => { // cambios hechos desde otro dispositivo
       if (sn.metadata.hasPendingWrites || !sn.exists) return;
       const str = sn.data().state; if (!str || str === lastRemote) return;
-      lastRemote = str; try { applyState(JSON.parse(str), true); save(); refreshPineAfterSync(); } catch {}
+      // No pises una edición local que aún no llegó a Firestore. Puede ocurrir si el otro dispositivo guarda durante la ventana de debounce de 1,2 s.
+      if (dirtyKey() && lsGet(dirtyKey())) {
+        lastRemote = str;
+        syncStatus = 'Hay cambios locales pendientes; se conservarán y se sincronizarán.';
+        cloudPush(); renderAccount(); return;
+      }
+      try {
+        const incoming = JSON.parse(str);
+        applyState(incoming, true);
+        // Una recepción remota se persiste sin marcarla como edición local pendiente.
+        localStorage.setItem(storeKey(), JSON.stringify(state));
+        const dk = dirtyKey(); if (dk) localStorage.removeItem(dk);
+        lastRemote = str; refreshPineAfterSync();
+      } catch {}
     }, () => {});
     const sref = db.doc(`users/${uid}/data/scripts`), ssnap = await sref.get();
     if (ssnap.exists && ssnap.data().items) { scriptsRemote = ssnap.data().items; try { scripts = withCatalog(JSON.parse(scriptsRemote)); localStorage.setItem(scriptsKey(), JSON.stringify({items: userScripts()})); renderScripts(); } catch {} }
@@ -2313,7 +2326,7 @@ async function cloudPushNow() {
   if (str === lastRemote) { try { localStorage.removeItem(dirtyKey()); } catch {} return; }
   if (str.length > CLOUD_MAX) { syncStatus = 'Tu configuración es demasiado grande para la nube (' + Math.round(str.length / 1024) + ' KB). Borra algunos trazos del pincel: siguen guardados en este dispositivo.'; renderAccount(); return; }
   const mine = uid; lastRemote = str;
-  try { await db.doc(CLOUD_DOC(mine)).set({state: str, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); if (uid === mine) { try { localStorage.removeItem(dirtyKey()); } catch {} syncStatus = 'Guardado en tu cuenta · ' + syncSummary(); } }
+  try { await db.doc(CLOUD_DOC(mine)).set({state: str, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); if (uid === mine) { if (JSON.stringify(state) === str) { try { localStorage.removeItem(dirtyKey()); } catch {} syncStatus = 'Guardado en tu cuenta · ' + syncSummary(); } else if (hasPendingCloudChanges()) { syncStatus = 'Hay cambios locales mientras se sincronizaba; se volverán a enviar.'; cloudPush(); } } }
   catch { syncStatus = 'No se pudo guardar en la nube. Se reintentará al próximo cambio.'; lastRemote = ''; }
   renderAccount();
 }
