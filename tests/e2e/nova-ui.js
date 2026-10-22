@@ -60,8 +60,20 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
     const cardText = await page.locator('#sheetList .nova-card').filter({hasText: 'Nova Nexus'}).innerText();
     assert.doesNotMatch(cardText, /Error|no se pudo interpretar/i, cardText);
 
+    // Ejercita el oscilador con Nexus activo para detectar fallos al compartir el espacio de paneles.
+    await page.locator('[data-cat-add="nova-osc"]:visible').first().click();
+    await page.waitForFunction(() => {
+      const settings = document.querySelector('#sheetList [data-pine-set="cat:nova-osc"]');
+      const card = settings?.closest('.nova-card');
+      return card && !/Calculando/.test(card.innerText);
+    }, null, {timeout: 30000});
+    const oscillatorCard = await page.locator('#sheetList .nova-card').filter({hasText: 'Oscillator'}).innerText();
+    assert.doesNotMatch(oscillatorCard, /Error|no se pudo interpretar/i, oscillatorCard);
+
     await page.click('#closeSheet');
-    await page.waitForFunction(() => !!document.querySelector('#legendBox button[data-id="cat:nova-nexus"][data-do="set"]'), null, {timeout: 15000});
+    await page.waitForFunction(() =>
+      !!document.querySelector('#legendBox button[data-id="cat:nova-nexus"][data-do="set"]') &&
+      !!document.querySelector('#legendBox button[data-id="cat:nova-osc"][data-do="set"]'), null, {timeout: 15000});
     await page.click('#indicatorCount');
     await page.locator('button[data-indtab="mine"]:visible').click();
     await page.locator('#sheetList .nova-card [data-pine-set="cat:nova-nexus"]').click();
@@ -75,7 +87,7 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
       try { const s = JSON.parse(localStorage.getItem(key)); const p = (s.pine || []).find(x => x.sid === 'cat:nova-nexus'); return p && Object.keys(p.inputs || {}).length > 0; } catch { return false; }
     }), null, {timeout: 5000});
     assert.deepEqual(errors, [], 'la interfaz no debe producir excepciones: ' + errors.join(' | '));
-    console.log('Nova Nexus móvil: añadido al gráfico, leyenda visible, configuración editable y parámetro guardado.');
+    console.log('Nova Nexus y Nova Oscillator móvil: activos juntos, leyenda visible y configuración de Nexus guardada.');
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
