@@ -2326,7 +2326,7 @@ async function cloudPushNow() {
   if (str === lastRemote) { try { localStorage.removeItem(dirtyKey()); } catch {} return; }
   if (str.length > CLOUD_MAX) { syncStatus = 'Tu configuración es demasiado grande para la nube (' + Math.round(str.length / 1024) + ' KB). Borra algunos trazos del pincel: siguen guardados en este dispositivo.'; renderAccount(); return; }
   const mine = uid; lastRemote = str;
-  try { await db.doc(CLOUD_DOC(mine)).set({state: str, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); if (uid === mine) { try { localStorage.removeItem(dirtyKey()); } catch {} syncStatus = 'Guardado en tu cuenta · ' + syncSummary(); } }
+  try { await db.doc(CLOUD_DOC(mine)).set({state: str, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); if (uid === mine) { if (JSON.stringify(state) === str) { try { localStorage.removeItem(dirtyKey()); } catch {} syncStatus = 'Guardado en tu cuenta · ' + syncSummary(); } else if (hasPendingCloudChanges()) { syncStatus = 'Hay cambios locales mientras se sincronizaba; se volverán a enviar.'; cloudPush(); } } }
   catch { syncStatus = 'No se pudo guardar en la nube. Se reintentará al próximo cambio.'; lastRemote = ''; }
   renderAccount();
 }
