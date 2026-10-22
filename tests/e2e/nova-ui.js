@@ -57,14 +57,14 @@ const tickers = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSD
       const card = [...document.querySelectorAll('.nova-card')].find(x => x.querySelector('b')?.textContent.trim() === 'Nova Nexus');
       return card && card.querySelector('[data-pine-set="cat:nova-nexus"]') && !/Calculando/.test(card.innerText);
     }, null, {timeout: 30000});
-    const cardText = await page.locator('.nova-card').filter({hasText: 'Nova Nexus'}).innerText();
+    const cardText = await page.locator('#sheetList .nova-card').filter({hasText: 'Nova Nexus'}).innerText();
     assert.doesNotMatch(cardText, /Error|no se pudo interpretar/i, cardText);
 
     await page.click('#closeSheet');
     await page.waitForFunction(() => !!document.querySelector('#legendBox button[data-id="cat:nova-nexus"][data-do="set"]'), null, {timeout: 15000});
     await page.click('#indicatorCount');
     await page.locator('[data-indtab="mine"]:visible').click();
-    await page.locator('.nova-card [data-pine-set="cat:nova-nexus"]').click();
+    await page.locator('#sheetList .nova-card [data-pine-set="cat:nova-nexus"]').click();
     const dialog = page.locator('[role="dialog"][aria-label="Configuración"]');
     await dialog.waitFor({state: 'visible', timeout: 10000});
     assert.ok(await dialog.locator('input[data-k]').count() > 0, 'Nova Nexus debe mostrar entradas configurables');
