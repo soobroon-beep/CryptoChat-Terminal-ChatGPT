@@ -49,7 +49,8 @@ return{initializeApp(){},auth:Object.assign(()=>auth,{GoogleAuthProvider:functio
   console.log('LS móvil:', await B.evaluate(() => Object.keys(localStorage).map(k => k + '=' + localStorage.getItem(k).match(/"pine":\[[^\]]*\]/)?.[0] || '').filter(x => /mobile/.test(x)).join('\n')));
   await B.screenshot({path: out + 'sync_mobile.png'});
   // 3) Cambio en vivo: el PC añade otro indicador y el móvil lo recibe sin recargar
-  await A.evaluate(() => { document.querySelector('.side-tabs [data-side=indicatorView]').click(); const t = document.querySelector('#indicatorList [data-indtab=mine]'); t && t.click(); });
+  await A.click('[data-panel=indicators]'); await A.waitForTimeout(300);
+  await A.evaluate(() => document.querySelector('#sheetList [data-indtab=mine]')?.click());
   await A.evaluate(() => document.querySelector('[data-pine-new]').click()); await A.waitForTimeout(200);
   await A.fill('#pineName', 'Segundo PC'); await A.fill('#pineCode', '//@version=5\nindicator("Segundo PC")\nplot(ta.rsi(close, 14), "RSI")\n'); await A.click('#pineRun'); await A.waitForTimeout(2500);
   await B.waitForTimeout(2500);
